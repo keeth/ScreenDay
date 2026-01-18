@@ -81,6 +81,28 @@ jobs:
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
         fi
 
+    - name: Verify code signature
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      run: |
+        if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+          echo "⚠️  Skipping signature verification (unsigned build)"
+          exit 0
+        fi
+        
+        APP_PATH="DerivedData/Build/Products/Release/ScreenDay.app"
+        
+        echo "🔍 Verifying code signature..."
+        codesign -vvv --deep --strict "$APP_PATH"
+        
+        echo ""
+        echo "📋 Code signature details:"
+        codesign -dv --verbose=4 "$APP_PATH" 2>&1
+        
+        echo ""
+        echo "🔐 Entitlements:"
+        codesign -d --entitlements - "$APP_PATH"
+
     - name: Notarize app (optional)
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -100,17 +122,41 @@ jobs:
         # Create a zip for notarization
         ditto -c -k --keepParent "$APP_PATH" "$APP_PATH.zip"
 
-        # Submit for notarization
-        xcrun notarytool submit "$APP_PATH.zip" \
+        # Submit for notarization and capture the submission ID
+        SUBMIT_OUTPUT=$(xcrun notarytool submit "$APP_PATH.zip" \
           --apple-id "$APPLE_ID" \
           --password "$APPLE_ID_PASSWORD" \
           --team-id "$APPLE_TEAM_ID" \
-          --wait
-
-        # Staple the notarization ticket
-        xcrun stapler staple "$APP_PATH"
-
-        echo "✅ Notarization complete"
+          --wait 2>&1) || true
+        
+        echo "$SUBMIT_OUTPUT"
+        
+        # Extract submission ID from output
+        SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep "id:" | head -1 | awk '{print $2}')
+        
+        # Check if notarization succeeded
+        if echo "$SUBMIT_OUTPUT" | grep -q "status: Accepted"; then
+          echo "✅ Notarization accepted"
+          # Staple the notarization ticket
+          xcrun stapler staple "$APP_PATH"
+          echo "✅ Notarization complete"
+        else
+          echo "❌ Notarization failed"
+          echo ""
+          echo "📋 Fetching detailed log from Apple..."
+          if [ -n "$SUBMISSION_ID" ]; then
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_ID_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              notarization-log.json || true
+            echo ""
+            echo "=== NOTARIZATION LOG ==="
+            cat notarization-log.json
+            echo "========================"
+          fi
+          exit 1
+        fi
 
     - name: Create app bundle
       run: |
