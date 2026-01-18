@@ -16,10 +16,10 @@ final class ActiveDisplayTracker: ObservableObject {
     private var timerSource: DispatchSourceTimer?
     private var screensObserver: Any?
 
-    // Debounce state
+    // Debounce state - accessed only from stateQueue
     private let stateQueue = DispatchQueue(label: "com.screenday.ActiveDisplayTracker.state")
-    private var candidateID: CGDirectDisplayID?
-    private var candidateSince: Date?
+    private nonisolated(unsafe) var candidateID: CGDirectDisplayID?
+    private nonisolated(unsafe) var candidateSince: Date?
 
     // Configuration
     private let pollHz: Double = 6.0
@@ -46,7 +46,7 @@ final class ActiveDisplayTracker: ObservableObject {
         }
     }
 
-    private func handleDisplayChange() {
+    private nonisolated func handleDisplayChange() {
         stateQueue.async { [weak self] in
             self?.candidateID = nil
             self?.candidateSince = nil
@@ -72,7 +72,7 @@ final class ActiveDisplayTracker: ObservableObject {
         timerSource = nil
     }
 
-    private func pollDisplayOnBackground() {
+    private nonisolated func pollDisplayOnBackground() {
         // Get mouse location
         let loc = NSEvent.mouseLocation
         let inset = hysteresisInset

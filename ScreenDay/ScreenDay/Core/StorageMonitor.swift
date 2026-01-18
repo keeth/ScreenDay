@@ -80,28 +80,8 @@ class StorageMonitor: ObservableObject {
             appState.isPruning = false
         }
 
-        // Get all files with modification dates
-        var files: [(url: URL, date: Date, size: Int64)] = []
-
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return
-        }
-
-        for case let fileURL as URL in enumerator {
-            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
-                  let date = resourceValues.contentModificationDate,
-                  let size = resourceValues.fileSize else {
-                continue
-            }
-            files.append((url: fileURL, date: date, size: Int64(size)))
-        }
-
-        // Sort by date (oldest first)
-        files.sort { $0.date < $1.date }
+        // Collect files synchronously to avoid async iterator issues
+        let files = collectFiles(at: url)
 
         // Delete oldest files until under target size
         var currentSize: Int64 = files.reduce(0) { $0 + $1.size }
@@ -116,5 +96,32 @@ class StorageMonitor: ObservableObject {
                 print("Failed to delete file \(file.url.lastPathComponent): \(error.localizedDescription)")
             }
         }
+    }
+
+    /// Collects files with their modification dates and sizes, sorted oldest first
+    private nonisolated func collectFiles(at url: URL) -> [(url: URL, date: Date, size: Int64)] {
+        var files: [(url: URL, date: Date, size: Int64)] = []
+
+        guard let enumerator = FileManager.default.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        for case let fileURL as URL in enumerator {
+            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+                  let date = resourceValues.contentModificationDate,
+                  let size = resourceValues.fileSize else {
+                continue
+            }
+            files.append((url: fileURL, date: date, size: Int64(size)))
+        }
+
+        // Sort by date (oldest first)
+        files.sort { $0.date < $1.date }
+
+        return files
     }
 }
