@@ -79,34 +79,19 @@ class StatusBarController: NSObject {
     private func updateIcon() {
         guard let button = statusItem.button else { return }
 
-        let iconName: String
+        // Use SF Symbols for reliable menu bar icons
+        let symbolName: String
         if appState.isPruning {
-            iconName = "StatusIconYellow"
+            symbolName = "camera.fill.badge.ellipsis"
         } else if appState.isCapturing {
-            iconName = "StatusIconGreen"
+            symbolName = "camera.fill"
         } else {
-            iconName = "StatusIconOff"
+            symbolName = "camera"
         }
 
-        if let image = NSImage(named: iconName) {
-            button.image = image
-        } else {
-            // Fallback to SF Symbols if custom icons not found
-            let symbolName: String
-            if appState.isPruning {
-                symbolName = "camera.fill.badge.ellipsis"
-            } else if appState.isCapturing {
-                symbolName = "camera.fill"
-            } else {
-                symbolName = "camera"
-            }
-
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
-                .withSymbolConfiguration(config)
-
-            // Set template mode for proper menu bar appearance
-            button.image?.isTemplate = true
-        }
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        button.image?.isTemplate = true
     }
 }
