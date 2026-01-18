@@ -19,7 +19,7 @@ class ScreenshotService: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let appState = AppState.shared
     private let settings = SettingsManager.shared
-    private let logger = Logger(subsystem: "com.screenday.ScreenDay", category: "ScreenshotService")
+    private let logger = Logger(subsystem: "io.vurt.ScreenDay", category: "ScreenshotService")
     private let tracker = ActiveDisplayTracker()
     private var currentDisplayID: CGDirectDisplayID?
 

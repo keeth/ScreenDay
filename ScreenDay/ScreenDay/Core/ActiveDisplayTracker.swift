@@ -17,7 +17,7 @@ final class ActiveDisplayTracker: ObservableObject {
     private var screensObserver: Any?
 
     // Debounce state - accessed only from stateQueue
-    private let stateQueue = DispatchQueue(label: "com.screenday.ActiveDisplayTracker.state")
+    private let stateQueue = DispatchQueue(label: "io.vurt.ScreenDay.ActiveDisplayTracker.state")
     private nonisolated(unsafe) var candidateID: CGDirectDisplayID?
     private nonisolated(unsafe) var candidateSince: Date?
 

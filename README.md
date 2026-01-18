@@ -10,7 +10,7 @@ A minimalist macOS menu bar app that captures periodic screenshots to a folder.
 
 I wanted a simple application to capture my activity at work all day and send summaries of daily activity to my Obsidian repo.
 
-I started with the [Dayflow](https://dayflow.dev) app, which was very nice but was not compatible with Obsidian, so I decided to build a minimalist screen capture app that just populates a folder with screenshots. I then use custom scripts to analyze the screenshots and drop activity summaries into my Obsidian vault.
+I started with the [Dayflow](https://github.com/JerryZLiu/Dayflow) app, which is very nice but was not compatible with Obsidian, so I decided to build a minimalist screen capture app that just populates a folder with screenshots. I then use custom scripts to analyze the screenshots and drop activity summaries into my Obsidian vault.
 
 ## Features
 
@@ -41,11 +41,6 @@ After launching, grant Screen Recording permission in System Settings > Privacy 
 1. Click the camera icon in the menu bar
 2. Open Settings to configure destination folder, interval, and storage limit
 3. Toggle "Capture Screenshots" ON
-
-**Status Icons:**
-- 🟢 Green: Capturing
-- 🟡 Yellow: Pruning old files
-- ⚫ Gray: Paused
 
 ## Debugging
 
