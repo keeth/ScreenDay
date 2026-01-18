@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ScreenDay/ScreenDay/Assets.xcassets/AppIcon.appiconset/screenday_icon_128x128.png" alt="ScreenDay Icon" width="128" height="128">
+  <img src="ScreenDay/ScreenDay/Assets.xcassets/AppIcon.appiconset/screenday_icon_512x512.png" alt="ScreenDay Icon" width="100%">
 </p>
 
 # ScreenDay
