@@ -192,10 +192,26 @@ git push origin v1.0.0
 
 GitHub Actions will automatically:
 1. Build a Release version of the app
-2. Create a GitHub release with the tag
-3. Upload `ScreenDay.app.zip` as a release artifact
+2. Sign the app (if certificates are configured)
+3. Notarize the app (if Apple ID credentials are configured)
+4. Create a GitHub release with the tag
+5. Upload `ScreenDay.app.zip` as a release artifact
 
 See [.github/workflows/release.yml](.github/workflows/release.yml) for details.
+
+### Code Signing
+
+To enable code signing and notarization for releases, see [CODESIGNING.md](CODESIGNING.md) for setup instructions.
+
+Without code signing:
+- ✅ Builds will work
+- ⚠️ Users will see "unidentified developer" warnings
+- 🖱️ Users must right-click → Open on first launch
+
+With code signing + notarization:
+- ✅ Professional signed releases
+- ✅ Minimal security warnings
+- ✅ Users can double-click to open
 
 ## License
 

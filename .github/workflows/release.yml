@@ -19,21 +19,108 @@ jobs:
     - name: Show Xcode version
       run: xcodebuild -version
 
-    - name: Build ScreenDay Release
+    - name: Install Apple Certificate
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
-        xcodebuild clean build \
-          -project ScreenDay/ScreenDay.xcodeproj \
-          -scheme ScreenDay \
-          -configuration Release \
-          -derivedDataPath DerivedData \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+        # Skip if certificate secrets are not configured
+        if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+          echo "⚠️  Code signing certificates not configured - building unsigned"
+          echo "   To enable code signing, add BUILD_CERTIFICATE_BASE64, CERTIFICATE_PASSWORD,"
+          echo "   and KEYCHAIN_PASSWORD to your repository secrets"
+          exit 0
+        fi
+
+        # Create variables
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+        # Import certificate from secrets
+        echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+
+        # Create temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+        # Import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+
+        # Enable codesigning from a non user interactive shell
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+    - name: Build ScreenDay Release
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      run: |
+        # Build with or without code signing based on certificate availability
+        if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
+          echo "📦 Building unsigned release..."
+          xcodebuild clean build \
+            -project ScreenDay/ScreenDay.xcodeproj \
+            -scheme ScreenDay \
+            -configuration Release \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+        else
+          echo "📦 Building signed release..."
+          xcodebuild clean build \
+            -project ScreenDay/ScreenDay.xcodeproj \
+            -scheme ScreenDay \
+            -configuration Release \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            CODE_SIGN_STYLE=Manual
+        fi
+
+    - name: Notarize app (optional)
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      run: |
+        if [ -z "$APPLE_ID" ]; then
+          echo "⚠️  Notarization not configured - skipping"
+          echo "   To enable notarization, add APPLE_ID, APPLE_ID_PASSWORD,"
+          echo "   and APPLE_TEAM_ID to your repository secrets"
+          exit 0
+        fi
+
+        echo "📝 Notarizing app..."
+        APP_PATH="DerivedData/Build/Products/Release/ScreenDay.app"
+
+        # Create a zip for notarization
+        ditto -c -k --keepParent "$APP_PATH" "$APP_PATH.zip"
+
+        # Submit for notarization
+        xcrun notarytool submit "$APP_PATH.zip" \
+          --apple-id "$APPLE_ID" \
+          --password "$APPLE_ID_PASSWORD" \
+          --team-id "$APPLE_TEAM_ID" \
+          --wait
+
+        # Staple the notarization ticket
+        xcrun stapler staple "$APP_PATH"
+
+        echo "✅ Notarization complete"
 
     - name: Create app bundle
       run: |
         cd DerivedData/Build/Products/Release
         zip -r ScreenDay.app.zip ScreenDay.app
+
+    - name: Clean up keychain
+      if: always()
+      run: |
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        if [ -f "$KEYCHAIN_PATH" ]; then
+          security delete-keychain $KEYCHAIN_PATH || true
+        fi
 
     - name: Extract version from tag
       id: get_version
