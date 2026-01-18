@@ -55,6 +55,7 @@ jobs:
     - name: Build ScreenDay Release
       env:
         BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       run: |
         # Build with or without code signing based on certificate availability
         if [ -z "$BUILD_CERTIFICATE_BASE64" ]; then
@@ -76,7 +77,8 @@ jobs:
             -configuration Release \
             -derivedDataPath DerivedData \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            CODE_SIGN_STYLE=Manual
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
         fi
 
     - name: Notarize app (optional)
