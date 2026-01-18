@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+    - name: Show Xcode version
+      run: xcodebuild -version
+
+    - name: Build ScreenDay Release
+      run: |
+        xcodebuild clean build \
+          -project ScreenDay/ScreenDay.xcodeproj \
+          -scheme ScreenDay \
+          -configuration Release \
+          -derivedDataPath DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Create app bundle
+      run: |
+        cd DerivedData/Build/Products/Release
+        zip -r ScreenDay.app.zip ScreenDay.app
+
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ScreenDay ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          Release ${{ steps.get_version.outputs.VERSION }}
+
+          ## Installation
+          1. Download ScreenDay.app.zip
+          2. Unzip the file
+          3. Move ScreenDay.app to your Applications folder
+          4. Right-click and select "Open" on first launch (macOS will ask for confirmation)
+
+          ## What's New
+          - See commit history for changes in this release
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./DerivedData/Build/Products/Release/ScreenDay.app.zip
+        asset_name: ScreenDay.app.zip
+        asset_content_type: application/zip
