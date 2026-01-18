@@ -96,6 +96,7 @@
 				A20000005 /* ScreenshotService.swift */,
 				A20000006 /* StorageMonitor.swift */,
 				A20000010 /* PermissionManager.swift */,
+				EC5D745508CD4EA59CA0A57E /* ActiveDisplayTracker.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -197,6 +198,7 @@
 				A10000008 /* StatusMenuView.swift in Sources */,
 				A10000009 /* SettingsView.swift in Sources */,
 				A10000011 /* PermissionManager.swift in Sources */,
+				2E704CE868ED4DDEADF3672D /* ActiveDisplayTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
