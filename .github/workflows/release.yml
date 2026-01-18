@@ -78,7 +78,9 @@ jobs:
             -derivedDataPath DerivedData \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            OTHER_CODE_SIGN_FLAGS="--timestamp" \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
         fi
 
     - name: Verify code signature
