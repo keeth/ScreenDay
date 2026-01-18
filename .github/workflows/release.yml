@@ -176,38 +176,16 @@ jobs:
           security delete-keychain $KEYCHAIN_PATH || true
         fi
 
-    - name: Extract version from tag
-      id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.ref }}
-        release_name: ScreenDay ${{ steps.get_version.outputs.VERSION }}
-        draft: false
-        prerelease: false
+        files: ./DerivedData/Build/Products/Release/ScreenDay.app.zip
         body: |
-          Release ${{ steps.get_version.outputs.VERSION }}
-
           ## Installation
           1. Download ScreenDay.app.zip
           2. Unzip the file
           3. Move ScreenDay.app to your Applications folder
-          4. Right-click and select "Open" on first launch (macOS will ask for confirmation)
+          4. Double-click to launch (the app is signed and notarized)
 
           ## What's New
           - See commit history for changes in this release
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./DerivedData/Build/Products/Release/ScreenDay.app.zip
-        asset_name: ScreenDay.app.zip
-        asset_content_type: application/zip
