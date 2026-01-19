@@ -25,7 +25,6 @@ class ScreenshotService: ObservableObject {
 
     private init() {
         logger.info("📸 ScreenshotService initialized")
-        print("📸 ScreenshotService initialized")
 
         // Observe active display changes
         tracker.$activeDisplayID
@@ -34,7 +33,6 @@ class ScreenshotService: ObservableObject {
                 self.currentDisplayID = displayID
                 if let id = displayID {
                     self.logger.info("📺 Active display changed to: \(id)")
-                    print("📺 Active display changed to: \(id)")
                 }
             }
             .store(in: &cancellables)
@@ -43,7 +41,6 @@ class ScreenshotService: ObservableObject {
         appState.$isCapturing
             .sink { [weak self] isCapturing in
                 self?.logger.info("📸 Capture state changed: \(isCapturing)")
-                print("📸 Capture state changed: \(isCapturing)")
                 if isCapturing {
                     self?.startCapturing()
                 } else {
@@ -89,7 +86,6 @@ class ScreenshotService: ObservableObject {
         let interval = settings.screenshotInterval
         let destination = settings.destinationFolder.path
         logger.info("📸 Starting capture: interval=\(interval, privacy: .public)s, destination=\(destination, privacy: .public)")
-        print("📸 Starting capture: interval=\(interval)s, destination=\(destination)")
 
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -100,7 +96,6 @@ class ScreenshotService: ObservableObject {
         // Take first screenshot immediately
         Task {
             logger.info("📸 Taking initial screenshot...")
-            print("📸 Taking initial screenshot...")
             await captureScreenshot()
         }
     }
@@ -108,7 +103,6 @@ class ScreenshotService: ObservableObject {
     private func stopCapturing() {
         if timer != nil {
             logger.info("📸 Stopping capture")
-            print("📸 Stopping capture")
             timer?.invalidate()
             timer = nil
         }
@@ -116,7 +110,7 @@ class ScreenshotService: ObservableObject {
 
     private func captureScreenshot() async {
         do {
-            print("📸 Getting shareable content...")
+            logger.debug("📸 Getting shareable content...")
 
             // Get available content
             let content = try await SCShareableContent.excludingDesktopWindows(
@@ -129,17 +123,16 @@ class ScreenshotService: ObservableObject {
             if let activeID = currentDisplayID,
                let activeDisplay = content.displays.first(where: { $0.displayID == activeID }) {
                 display = activeDisplay
-                print("📸 Using active display: \(display.displayID), size: \(display.width)x\(display.height)")
+                logger.debug("📸 Using active display: \(display.displayID), size: \(display.width)x\(display.height)")
             } else if let firstDisplay = content.displays.first {
                 display = firstDisplay
-                print("📸 Using first display: \(display.displayID), size: \(display.width)x\(display.height)")
+                logger.debug("📸 Using first display: \(display.displayID), size: \(display.width)x\(display.height)")
             } else {
-                print("❌ No display found!")
+                logger.error("❌ No display found!")
                 return
             }
 
             // Create screenshot configuration
-            print("📸 Capturing image...")
             let config = SCStreamConfiguration()
 
             // Calculate dimensions to maintain aspect ratio at ~1080p
@@ -159,7 +152,7 @@ class ScreenshotService: ObservableObject {
                 configuration: config
             )
 
-            print("📸 Image captured: \(image.width)x\(image.height)")
+            logger.debug("📸 Image captured: \(image.width)x\(image.height)")
 
             // Save to disk
             try await saveScreenshot(image)
@@ -169,15 +162,12 @@ class ScreenshotService: ObservableObject {
 
         } catch {
             logger.error("❌ Failed to capture screenshot: \(error.localizedDescription, privacy: .public)")
-            print("❌ Failed to capture screenshot: \(error)")
-            print("❌ Error details: \(error.localizedDescription)")
 
             // Check if it's a permission error
             let nsError = error as NSError
             logger.error("❌ Error domain: \(nsError.domain, privacy: .public), code: \(nsError.code, privacy: .public)")
             if nsError.domain == "com.apple.ScreenCaptureKit.SCStreamErrorDomain" && nsError.code == -3801 {
                 logger.error("🔐 Permission denied - stopping capture to avoid repeated dialogs")
-                print("🔐 Permission denied - stopping capture to avoid repeated dialogs")
                 // Update permission status
                 await PermissionManager.shared.checkPermission()
                 // Stop capturing to avoid repeated permission prompts
@@ -241,28 +231,28 @@ class ScreenshotService: ObservableObject {
     }
 
     @objc private func systemWillSleep() {
-        print("💤 System going to sleep")
+        logger.info("💤 System going to sleep")
         if appState.isCapturing {
             stopCapturing()
         }
     }
 
     @objc private func systemDidWake() {
-        print("👋 System woke up")
+        logger.info("👋 System woke up")
         if appState.isCapturing {
             startCapturing()
         }
     }
 
     @objc private func screenDidLock() {
-        print("🔒 Screen locked")
+        logger.info("🔒 Screen locked")
         if appState.isCapturing {
             stopCapturing()
         }
     }
 
     @objc private func screenDidUnlock() {
-        print("🔓 Screen unlocked")
+        logger.info("🔓 Screen unlocked")
         if appState.isCapturing {
             startCapturing()
         }

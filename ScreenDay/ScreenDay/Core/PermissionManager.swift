@@ -7,10 +7,12 @@
 
 import Foundation
 import ScreenCaptureKit
+import os.log
 
 @MainActor
 class PermissionManager: ObservableObject {
     static let shared = PermissionManager()
+    private let logger = Logger(subsystem: "io.vurt.ScreenDay", category: "PermissionManager")
 
     @Published var hasScreenRecordingPermission: Bool = false
 
@@ -25,10 +27,10 @@ class PermissionManager: ObservableObject {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             hasScreenRecordingPermission = !content.displays.isEmpty
-            print("🔐 Screen recording permission: \(hasScreenRecordingPermission ? "✅ granted" : "❌ denied")")
+            logger.info("🔐 Screen recording permission: \(hasScreenRecordingPermission ? "✅ granted" : "❌ denied")")
         } catch {
             hasScreenRecordingPermission = false
-            print("🔐 Screen recording permission: ❌ denied or not yet granted")
+            logger.info("🔐 Screen recording permission: ❌ denied or not yet granted")
         }
     }
 

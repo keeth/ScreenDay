@@ -8,13 +8,15 @@
 import Cocoa
 import SwiftUI
 import ScreenCaptureKit
+import os.log
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController?
+    private let logger = Logger(subsystem: "io.vurt.ScreenDay", category: "AppDelegate")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("🚀 ScreenDay launched")
+        logger.info("🚀 ScreenDay launched")
 
         // Initialize services
         _ = ScreenshotService.shared

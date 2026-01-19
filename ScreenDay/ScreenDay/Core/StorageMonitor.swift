@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import os.log
 
 @MainActor
 class StorageMonitor: ObservableObject {
@@ -16,6 +17,7 @@ class StorageMonitor: ObservableObject {
     private let appState = AppState.shared
     private let settings = SettingsManager.shared
     private let checkInterval: TimeInterval = 30.0 // Check every 30 seconds
+    private let logger = Logger(subsystem: "io.vurt.ScreenDay", category: "StorageMonitor")
 
     private init() {
         startMonitoring()
@@ -93,7 +95,7 @@ class StorageMonitor: ObservableObject {
                 try FileManager.default.removeItem(at: file.url)
                 currentSize -= file.size
             } catch {
-                print("Failed to delete file \(file.url.lastPathComponent): \(error.localizedDescription)")
+                logger.error("Failed to delete file \(file.url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }
