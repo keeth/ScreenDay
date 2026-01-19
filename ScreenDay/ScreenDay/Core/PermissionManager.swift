@@ -27,7 +27,7 @@ class PermissionManager: ObservableObject {
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
             hasScreenRecordingPermission = !content.displays.isEmpty
-            logger.info("🔐 Screen recording permission: \(hasScreenRecordingPermission ? "✅ granted" : "❌ denied")")
+            logger.info("🔐 Screen recording permission: \(self.hasScreenRecordingPermission ? "✅ granted" : "❌ denied")")
         } catch {
             hasScreenRecordingPermission = false
             logger.info("🔐 Screen recording permission: ❌ denied or not yet granted")

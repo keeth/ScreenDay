@@ -40,10 +40,11 @@ class ScreenshotService: ObservableObject {
         // Observe capture state changes
         appState.$isCapturing
             .sink { [weak self] isCapturing in
-                self?.logger.info("📸 Capture state changed: \(isCapturing)")
                 if isCapturing {
+                    self?.logger.info("✅ Screenshot capture ENABLED")
                     self?.startCapturing()
                 } else {
+                    self?.logger.info("⏹️ Screenshot capture DISABLED")
                     self?.stopCapturing()
                 }
             }
@@ -155,7 +156,10 @@ class ScreenshotService: ObservableObject {
             logger.debug("📸 Image captured: \(image.width)x\(image.height)")
 
             // Save to disk
-            try await saveScreenshot(image)
+            let filename = try await saveScreenshot(image)
+
+            // Log success
+            logger.info("✅ Screenshot saved successfully: \(filename, privacy: .public)")
 
             // Update permission status on success
             await PermissionManager.shared.checkPermission()
@@ -178,7 +182,7 @@ class ScreenshotService: ObservableObject {
         }
     }
 
-    private func saveScreenshot(_ cgImage: CGImage) async throws {
+    private func saveScreenshot(_ cgImage: CGImage) async throws -> String {
         let destinationFolder = settings.destinationFolder
 
         logger.info("📸 Saving to: \(destinationFolder.path, privacy: .public)")
@@ -220,10 +224,10 @@ class ScreenshotService: ObservableObject {
         logger.info("📸 JPEG size: \(jpegData.count / 1024, privacy: .public) KB")
 
         // Write to file
-        logger.info("📸 Writing to file: \(fileURL.path, privacy: .public)")
+        logger.debug("📸 Writing to file: \(fileURL.path, privacy: .public)")
         do {
             try jpegData.write(to: fileURL)
-            logger.info("✅ Screenshot saved successfully: \(fileURL.lastPathComponent, privacy: .public)")
+            return filename
         } catch {
             logger.error("❌ Failed to write file: \(error.localizedDescription, privacy: .public)")
             throw error

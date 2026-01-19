@@ -16,20 +16,20 @@ class AppState: ObservableObject {
 
     @Published var isCapturing: Bool = false {
         didSet {
-            logger.info("🎯 AppState.isCapturing changed to: \(isCapturing)")
-            SettingsManager.shared.isCapturing = isCapturing
+            logger.info("🎯 AppState.isCapturing changed to: \(self.isCapturing)")
+            SettingsManager.shared.isCapturing = self.isCapturing
         }
     }
 
     @Published var isPruning: Bool = false {
         didSet {
-            logger.info("🧹 AppState.isPruning changed to: \(isPruning)")
+            logger.info("🧹 AppState.isPruning changed to: \(self.isPruning)")
         }
     }
 
     private init() {
         // Restore previous capture state
         isCapturing = SettingsManager.shared.isCapturing
-        logger.info("🎯 AppState initialized with isCapturing: \(isCapturing)")
+        logger.info("🎯 AppState initialized with isCapturing: \(self.isCapturing)")
     }
 }
