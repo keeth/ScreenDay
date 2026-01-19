@@ -25,7 +25,6 @@ class StatusBarController: NSObject {
         if let button = statusItem.button {
             button.action = #selector(togglePopover)
             button.target = self
-            updateIcon()
         }
 
         // Create popover
@@ -36,14 +35,14 @@ class StatusBarController: NSObject {
 
         // Observe state changes
         appState.$isCapturing
-            .sink { [weak self] _ in
-                self?.updateIcon()
+            .sink { [weak self] isCapturing in
+                self?.updateIcon(isCapturing: isCapturing)
             }
             .store(in: &cancellables)
 
         appState.$isPruning
             .sink { [weak self] _ in
-                self?.updateIcon()
+                self?.updateIcon(isCapturing: self?.appState.isCapturing ?? false)
             }
             .store(in: &cancellables)
 
@@ -53,6 +52,9 @@ class StatusBarController: NSObject {
                 self?.openSettings()
             }
             .store(in: &cancellables)
+
+        // Ensure the initial icon reflects the latest state.
+        updateIcon(isCapturing: appState.isCapturing)
     }
 
     private func openSettings() {
@@ -76,16 +78,16 @@ class StatusBarController: NSObject {
         }
     }
 
-    private func updateIcon() {
+    private func updateIcon(isCapturing: Bool) {
         guard let button = statusItem.button else { return }
 
         // Use SF Symbols for reliable menu bar icons
         let symbolName: String
-        if appState.isPruning {
-            symbolName = "camera.fill.badge.ellipsis"
-        } else if appState.isCapturing {
+        if isCapturing {
+            print("🎯 Updating icon to camera (capturing)")
             symbolName = "camera.fill"
         } else {
+            print("🎯 Updating icon to camera.fill (not capturing)")
             symbolName = "camera"
         }
 

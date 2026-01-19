@@ -44,7 +44,8 @@ struct StatusMenuView: View {
                 get: { appState.isCapturing },
                 set: { appState.isCapturing = $0 }
             ))
-            .toggleStyle(SwitchToggleStyle(tint: .blue))
+            .toggleStyle(.switch)
+            .tint(.blue)
             .padding(.horizontal)
             .disabled(!permissionManager.hasScreenRecordingPermission)
 
