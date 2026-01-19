@@ -10,7 +10,7 @@ import SwiftUI
 import Combine
 
 @MainActor
-class StatusBarController: NSObject {
+class StatusBarController: NSObject, NSPopoverDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var cancellables = Set<AnyCancellable>()
@@ -32,6 +32,7 @@ class StatusBarController: NSObject {
         popover.contentSize = NSSize(width: 250, height: 200)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: StatusMenuView())
+        popover.delegate = self
 
         // Observe state changes
         appState.$isCapturing
@@ -76,6 +77,14 @@ class StatusBarController: NSObject {
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             }
         }
+    }
+
+    func popoverWillShow(_ notification: Notification) {
+        // Ensure the popover window becomes key so controls render active.
+        if let window = popover.contentViewController?.view.window {
+            window.makeKeyAndOrderFront(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func updateIcon(isCapturing: Bool) {
